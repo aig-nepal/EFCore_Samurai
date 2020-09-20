@@ -1,5 +1,6 @@
 ﻿using BasicEFCore_SamuraiApp.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,10 +16,27 @@ namespace BasicEFCore_SamuraiApp.Data
         public DbSet<Clan> Clans { get; set; }
         public DbSet<Battle> Battles { get; set; }
 
+
+
+
+        public static readonly ILoggerFactory ConsoleloggerFactory =
+            LoggerFactory.Create(builder =>
+            {
+                builder
+                .AddFilter((category, level) =>
+                category == DbLoggerCategory.Database.Command.Name
+                && level == LogLevel.Information)
+                .AddConsole();
+            });
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             //base.OnConfiguring(optionsBuilder); 
-            optionsBuilder.UseSqlServer("Data Source = (localdb)\\MSSQLLocalDB; Initial Catalog = SamuraiDB");
+            optionsBuilder.UseLoggerFactory(loggerFactory: ConsoleloggerFactory).EnableSensitiveDataLogging();
+            optionsBuilder.UseSqlServer(
+                connectionString: "Data Source = (localdb)\\MSSQLLocalDB; Initial Catalog = SamuraiDB",
+                option => option.MaxBatchSize(100)
+                );
         }
 
 
@@ -29,5 +47,7 @@ namespace BasicEFCore_SamuraiApp.Data
             modelBuilder.Entity<SamuraiBattle>().HasKey(x => new { x.SamuraiId, x.BattleId });
             modelBuilder.Entity<Horse>().ToTable("Horses");
         }
+
+
     }
 }
